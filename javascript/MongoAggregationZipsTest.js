@@ -7,95 +7,99 @@ function teardown() {
 
 var tests = {
 
-    /**
-    this test only checks we have 29467 zipcodes in our database
-    */
+
     testThatDatabaseHasZipcodes: function() {
         assert.eq(db.zips.find().count(), 29467)
     },
-    /**
-    Find the city with one of its zipcode has the largest popuplation
-    Only use skip limit and sort
 
-    Note : It is of course possible to find the result without the aggregation framework, 
-    but this is not the exercise
-    */
     testFindLargestZipCodeAmongstCity: function() {
-        var pipeline = [];
+        var sort = {"$sort" : {"pop" : -1}}
+        var limit = {"$limit" : 1}
+        var pipeline = [sort, limit];
         var result =db.zips.aggregate(pipeline).toArray()
         assert.eq(result[0]['city'], 'CHICAGO')
     },
 
-    /**
-    Same question, but this time, the field _id should be rewritten as follows : 
-    par exemple : chicago IL - zipcode
-    Must read documentation: 
-    - concat : http://docs.mongodb.org/manual/reference/operator/aggregation/concat/
-    - toLower : http://docs.mongodb.org/manual/reference/operator/aggregation/toLower/
-    */
+
     testFindLargestCityWithNormalizedName: function() {
-        var pipeline = [];
+        var sort = {"$sort" : {"pop" : -1}}
+        var limit = {"$limit" : 1}
+        var project = {"$project" : {
+                                   "_id" : {
+                                        "$concat" : [{"$toLower" : "$city"}, ' ', '$state', ' - ', '$_id'] 
+                                   }, 
+                                   "pop" : 1
+                               }
+                  }
+        var pipeline = [sort, limit, project];
         var result =db.zips.aggregate(pipeline).toArray()
         assert.eq(result[0]['_id'], 'chicago IL - 60623')
     },
 
-    /**
-    Find the city where on its zipcode has the largest population in the state of New York (NY)
-    */
+
     testFindLargestZipCodeAmongstCityOfNewYork: function() {
-        var pipeline = [];
+        var sort = {"$sort" : {"pop" : -1}}
+        var limit = {"$limit" : 1}
+        var match = {"$match" : { "state" : 'NY' }}
+        var pipeline = [match, sort, limit];
         var result =db.zips.aggregate(pipeline).toArray()
         assert.eq(result[0]['city'], 'BROOKLYN')
     },
 
-    /**
-    Find the state with the greatest number of zipcodes
-    */
+
     testStateWithTheLargestNumberOfZipCodes: function() {
-        var pipeline = [];
+        var group = {"$group" : {'_id' : '$state', 'number_of_zipcode' : {'$sum' : 1}}}
+        var sort = {"$sort" : {"number_of_zipcode" : -1}}
+        var limit = {"$limit" : 1}        
+        var pipeline = [group, sort, limit];
         var result =db.zips.aggregate(pipeline).toArray()
         assert.eq(result[0]['_id'], 'TX')
         assert.eq(result[0]['number_of_zipcode'], 1676)
     },
 
-    /**
-    Find the second state with the greatest number of zipcodes
-    */
+
     testSecondStateWithTheLargestNumberOfZipCodes: function() {
-        var pipeline = [];
+        var group = {"$group" : {'_id' : '$state', 'number_of_zipcode' : {'$sum' : 1}}}
+        var sort = {"$sort" : {"number_of_zipcode" : -1}}
+        var skip = {'$skip' : 1};
+        var limit = {"$limit" : 1}        
+        var pipeline = [group, sort, skip, limit];
         var result =db.zips.aggregate(pipeline).toArray()
         assert.eq(result[0]['_id'], 'NY')
         assert.eq(result[0]['number_of_zipcode'], 1596)
     },
 
-    /**
-    Find the state with the biggest population
-    */
+
     testStateWithLargestPopulation: function() {
-        var pipeline = [];
+        var group = {"$group" : {'_id' : '$state', 'total_pop' : {'$sum' : "$pop"}}}
+        var sort = {"$sort" : {"total_pop" : -1}}
+        var limit = {"$limit" : 1}        
+        var pipeline = [group, sort, limit];
         var result =db.zips.aggregate(pipeline).toArray()
         assert.eq(result[0]['_id'], 'CA')
         assert.eq(result[0]['total_pop'], 29760021)
     },
 
-    /**
-    Find the biggest city in New York (without skip and limit but with $first or $last)
-    Must read documentation:
-    - $first http://docs.mongodb.org/manual/reference/operator/aggregation/first/
-    - $last : http://docs.mongodb.org/manual/reference/operator/aggregation/last/
-    */
+
     testLargestCityInNewYork: function() {
-        var pipeline = [];
+        var match = {"$match" : { "state" : 'NY' }}
+        var groupByCity = {"$group" : {'_id' : {"state" : '$state', "city" : "$city"}, 'pop_by_city' : {'$sum' : "$pop"}}}
+        var sort = {"$sort" : {"pop_by_city" : -1}}
+        var findLargest = {"$group" : {'_id' : "$_id.state", 'largest_city' : {'$first' : "$_id.city"}, 'largest_pop' : {'$first' : "$pop_by_city"}}}
+
+        var pipeline = [match, groupByCity, sort, findLargest];
         var result =db.zips.aggregate(pipeline).toArray()
         assert.eq(result[0]['largest_city'], 'BROOKLYN')
         assert.eq(result[0]['largest_pop'], 2300504)
     },
 
-    /**
-    What is the average population in a city of New York (NY)
-    */
+
     testAvgPopulationByCityInNewYork: function() {
-        var pipeline = [];
+        var match = {"$match" : { "state" : 'NY' }}
+        var groupByCityAndState = {"$group" : {'_id' : {"state" : '$state', "city" : "$city"}, 'pop_by_city' : {'$sum' : "$pop"}}}
+        var findAverage = {"$group" : {'_id' : "$_id.state", 'avg_city_pop' : {'$avg' : "$pop_by_city"}}}
+        
+        var pipeline = [match, groupByCityAndState, findAverage];
         var result =db.zips.aggregate(pipeline).toArray()
         assert.eq(Math.round(result[0]['avg_city_pop']), 13122)
     }

@@ -1,95 +1,84 @@
 
 function setup() {
-    // TODO
+	db.cds.remove({});
 }
 
 function teardown() {
-	// TODO
+	db.cds.remove({});
 }
+
 
 var tests = {
 
 
-
-    /**
-    This test check the collection is empty. 
-    */
 
     testThatDatabaseHas0Cds : function () {
         assert.eq(db.cds.find().count(), 0)        
     }
     ,
 
-
-    /**
-    First insert
-    */
-
-    testInsertWorks : function() {
+    testInsertWorks : function () {
         cd = {"name" : "cd1"}
 
-        // TODO
+        db.cds.insert(cd);
 
         assert.eq(db.cds.find().count(), 1)                
     }
     ,
-    /**
-    Batch insert
-    */
 
     testBatchInsert : function () {
         cd1 = {"name" : "cd1"}
         cd2 = {"name" : "cd2"}
 
-        // TODO
+        var bulk = db.cds.initializeUnorderedBulkOp();
+		bulk.insert( cd1 );
+		bulk.insert( cd2 );
+		bulk.execute( );
 
         assert.eq(db.cds.find().count(), 2)   
     }
     ,
-    /**
-    This test check we can update the CD's name
-    */
 
     testUpdateName : function () {
 
         tests.testInsertWorks();
 
-        // TODO
+        db.cds.update({"name" : "cd1"}, {"$set" : {"name" : "new name"}})
+
 
         assert.eq(db.cds.find({"name" : "cd1"}).count(), 0)
         assert.eq(db.cds.find({"name" : "new name"}).count(), 1)
     }
     ,
-    /**
-    Test with multiple partial updates.
-    We increment the counter nbArtiste and we add an object artists : {name : "Kurt Cobain"}
-    */
 
     testUpdateAndIncr : function () {
 
         tests.testInsertWorks();
 
-        // TODO
+        db.cds.update({"name" : "cd1"}, 
+                        {
+                            "$push" : 
+                            {
+                                "artists" : {"name" : "Kurt Cobain"}
+                            }, 
+                            "$inc": {"nbArtists" : 1}
+                        })
 
         assert.eq(db.cds.find({"name" : "cd1", "artists.name" : "Kurt Cobain", "nbArtists" : 1}).count(), 1)
     }
     ,
-    /**
-    Test for multiple updates
-    */
+
 
     testUpdateMulti: function () {
 
         tests.testBatchInsert();
 
-        // TODO
+        db.cds.update({}, {"$set" : {"rating" : 0}}, {'multi' : true})
 
         assert.eq(db.cds.find({"rating" : 0}).count(), 2)
     }
     ,
-    /**
-    Add tags but without duplicates
-    */
+
 
     testAddTag: function () {
 
@@ -97,15 +86,21 @@ var tests = {
 
         var tagsToAdd = ['grunge', 'funk', 'soul', 'grunge']
 
-        // TODO
+        db.cds.update({}, {
+                                "$addToSet" : 
+                                {   
+                                    "tags" : 
+                                    {
+                                        "$each" : tagsToAdd
+                                    }
+                                }
+                            })
 
         var cd = db.cds.findOne()
-        assert.eq(Object.keys(cd['tags']), 3)
+        assert.eq(cd['tags'].length,  3);
     }
     ,
-    /**
-    Remove the specified tags
-    */
+
 
     testRemoveTag : function () {
         
@@ -113,39 +108,44 @@ var tests = {
 
         var tagsToRemove = ['grunge', 'funk']
 
-        // TODO
+        db.cds.update({}, {"$pullAll" : {"tags" : tagsToRemove}})
 
         var cd = db.cds.findOne()
-        assert.eq(Object.keys(cd['tags']), 1)
+        assert.eq(cd['tags'].length,  1);
     }
     ,
 
-    /**
-    In this test, we update a document to add 4 new ratings
-    On those 4 new ratings, we only keep 3 of them, the most recent
-    */
 
     testAddSortedRatingAndLimitBy3 : function () {
 
         tests.testInsertWorks();
 
-        ratings = [
+        var ratings = [
                         {"rating" : 1, "date" : new Date(2010, 01, 15, 00, 00)},
                         {"rating" : 4, "date" : new Date(2011, 01, 15, 00, 00)},
                         {"rating" : 2, "date" : new Date(2009, 01, 15, 00, 00)},
                         {"rating" : 5, "date" : new Date(2013, 01, 15, 00, 00)}
                     ]
 
-        // TODO
+        db.cds.update({}, {"$push" : 
+            {
+                "ratings" : 
+                {
+                    "$each" :
+                    ratings,
+                    "$sort" : {"date" : 1}, 
+                    "$slice" : -3
+                }
+            }})
 
 
-        cd = db.cds.find_one()
+        var cd = db.cds.findOne()
         assert.eq(Object.keys(cd['ratings']).length, 3)   
         assert.eq(cd['ratings'][2]['rating'], 5)  
         assert.eq(cd['ratings'][0]['rating'], 1)       
     }
-    
 }
+
 
 for (var test in tests) {
     print ("####################");
@@ -156,5 +156,3 @@ for (var test in tests) {
     teardown();
     print("SUCCESS\n");
 }
-
-

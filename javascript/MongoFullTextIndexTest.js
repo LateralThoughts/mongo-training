@@ -1,6 +1,6 @@
 
 function setup() {
-    // TODO
+    db.searchEvents.ensureIndex({"params.queryText" : "text"})
 }
 
 function teardown() {
@@ -9,32 +9,23 @@ function teardown() {
 
 var tests = {
 
-    /**
-    Find how many times "Java" is present in queryText using standard search
-    */
     testNumberOccurenceJavaInSearch : function() {
-        var query = {}
+        var query = {"params.queryText" : "Java"}
         var result = db.searchEvents.count(query)
         assert.eq(result, 643);
     },
 
-    /**
-    Find how many times "Java" is present in queryText using full text search
-    */
     testNumberOccurenceJavaInSearchUsingFullTextQuery : function() {
-        var query = {}
+        var query = {"$text" : {$search : "Java"}}
         var result = db.searchEvents.count(query)
         assert.eq(result, 14978);
     },
 
-    /**
-    Retrieve all search of "Java" by relevance and verify the first result has the highest score
-    */
     testSortByRelevance : function() {
-        var query = {}
-        var sort = {}
-        var projection={}
-        var result = []
+        var query = {"$text" : {$search : "Java"}}
+        var projection= {score: { $meta: "textScore" }}
+        var sort = {score: { $meta: "textScore" } }
+        var result = db.searchEvents.find(query, projection ).sort(sort).limit(1)
         assert(result.count(), 1);
         var search = result.next();
         assert.eq(search["params"]["queryText"], "Java/Java EE");

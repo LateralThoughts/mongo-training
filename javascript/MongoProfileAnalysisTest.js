@@ -9,13 +9,11 @@ function teardown() {
 
 var tests = {
 
-    /**
-    Find the slowest query
-    */
+
     testFindSlowestQuery : function() {
-        var query = {};
-        var sort = {};
-        var result = [];
+        var query = {op : "query"}
+        var sort = {millis : -1}
+        var result = db.sysprofile.find(query).sort(sort).limit(1)
         assert(result.count(), 1);
         var stat = result.next();
         assert.eq(stat["millis"], 15820);
@@ -23,22 +21,16 @@ var tests = {
         assert.eq(stat["query"], {"student_id" : 80});
     },
 
-    /**
-    Find how many query are slower than 100ms
-    */
     testFindAmountOfSlowQueries : function() {
-        var query = {};
-        var result = db.sysprofile.count(query);
+        var query = {millis : {$gt : 100 }}
+        var result = db.sysprofile.count(query)
         assert.eq(result, 100);
     },
 
-    /**
-    Find the slowest command
-    */
     testFindSlowestCommand : function() {
-        var query = {};
-        var sort = {};
-        var result = [];
+        var query = {op : "command"}
+        var sort = {millis : -1}
+        var result = db.sysprofile.find(query).sort(sort).limit(1)
         assert(result.count(), 1);
         var stat = result.next();
         assert.eq(stat["millis"], 47);
@@ -46,14 +38,12 @@ var tests = {
         assert.eq(stat["command"], {"drop" : "gpa"});
     },
 
-    /**
-    Find all collections involved in this profiling session
-    */
     testFindAllCollectionsInvolved : function() {
-        var result = []; // replace by the full command
+        var result = db.sysprofile.distinct("ns")
         assert(result.length, 7);
         assert.eq(result.indexOf("school2.students") != -1, true);
-    }
+    },
+
 
 }
 
