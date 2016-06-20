@@ -2,6 +2,7 @@ package com.lateralthoughts.blog.springdata.repositories;
 
 import com.github.fakemongo.Fongo;
 import com.mongodb.Mongo;
+import com.mongodb.client.MongoDatabase;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;

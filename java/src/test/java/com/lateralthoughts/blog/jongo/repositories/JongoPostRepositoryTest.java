@@ -1,11 +1,14 @@
 package com.lateralthoughts.blog.jongo.repositories;
 
+import com.github.fakemongo.Fongo;
+import com.lateralthoughts.blog.model.Comment;
 import com.lateralthoughts.blog.model.Post;
 import org.assertj.core.groups.Tuple;
 import org.jongo.Jongo;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -24,7 +27,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 public class JongoPostRepositoryTest {
 
-    private Jongo jongo;
     private JongoPostRepository postRepository;
 
     @Before
@@ -36,27 +38,28 @@ public class JongoPostRepositoryTest {
         insertOnePost("authorName2", "body2", "post2", Arrays.asList("tag2"));
     }
 
-    private void insertOnePost(String author, String body, String permalink, List<String> tags) {
-
-        // TODO
-
+    private void initJongoAndRepository() {
+        final Jongo fakeJongo = new Jongo(new Fongo("fake_db").getDB("fake_db"));
+        postRepository = new JongoPostRepository(fakeJongo);
+        postRepository.afterPropertiesSet();
     }
 
-    private void initJongoAndRepository() {
-
-        // TODO
-
+    private void insertOnePost(String author, String body, String permalink, List<String> tags) {
+        final Post post = new Post(permalink);
+        post.setAuthor(author);
+        post.setBody(body);
+        post.setTags(tags);
+        postRepository.save(post);
     }
 
     @Test
     public void should_update_body() {
-        Post post = null;
+        Post post = postRepository.findByPermalink("post1");
 
-        // TODO
+        post.setBody("body2");
+        postRepository.save(post);
 
-        Post postFromDb = null;
-
-        // TODO
+        Post postFromDb = postRepository.findByPermalink("post1");
 
         assertThat(postFromDb)
                 .extracting("body").containsExactly("body2");
@@ -66,9 +69,8 @@ public class JongoPostRepositoryTest {
     @Test
     public void should_find_all_documents() {
 
-        List<Post> posts = null;
-
-        // TODO
+        List<Post> posts = new ArrayList<>();
+        postRepository.findAll().forEach(posts::add);
 
         assertThat(posts).hasSize(2);
     }
@@ -77,9 +79,8 @@ public class JongoPostRepositoryTest {
     @Test
     public void should_find_by_author() {
 
-        List<Post> posts = null;
-
-        // TODO
+        List<Post> posts = new ArrayList<>();
+        postRepository.findByAuthor("authorName1").forEach(posts::add);
 
         assertThat(posts)
                 .hasSize(1)
@@ -90,9 +91,7 @@ public class JongoPostRepositoryTest {
     @Test
     public void should_find_by_permalink() {
 
-        Post post = null;
-
-        // TODO
+        Post post = postRepository.findByPermalink("post1");
 
         assertThat(post.getAuthor()).isEqualTo("authorName1");
         assertThat(post.getBody()).isEqualTo("body1");
@@ -101,9 +100,8 @@ public class JongoPostRepositoryTest {
     @Test
     public void should_find_by_tag() {
 
-        List<Post> posts = null;
-
-        // TODO
+        List<Post> posts = new ArrayList<>();
+        postRepository.findByTags("tag1").forEach(posts::add);
 
         assertThat(posts)
                 .hasSize(1)
@@ -114,21 +112,17 @@ public class JongoPostRepositoryTest {
     @Test
     public void should_add_comment() {
 
-        // TODO
+        postRepository.addComment("post1", new Comment("authorName1", "bodyComment"));
 
-        List<Post> posts = null;
-
-        // TODO
+        List<Post> posts = new ArrayList<>();
+        postRepository.findAll().forEach(posts::add);
 
         assertThat(posts).hasSize(2);
 
-        Post postFromDb = null;
+        Post postFromDb = postRepository.findByPermalink("post1");
 
-        // TODO
-
-        assertThat(postFromDb.getPermalink()).isEqualTo("post1");
-
-        assertThat(postFromDb.getNumComments()).isEqualTo(1);
+        assertThat(postFromDb)
+                .extracting("numComments").containsExactly(1);
 
         assertThat(postFromDb.getComments())
                 .hasSize(1)

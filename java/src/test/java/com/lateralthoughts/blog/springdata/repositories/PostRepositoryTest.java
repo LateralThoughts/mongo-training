@@ -1,5 +1,6 @@
 package com.lateralthoughts.blog.springdata.repositories;
 
+import com.lateralthoughts.blog.model.Comment;
 import com.lateralthoughts.blog.model.Post;
 import org.assertj.core.groups.Tuple;
 import org.junit.Before;
@@ -41,20 +42,21 @@ public class PostRepositoryTest {
     }
 
     private void insertOnePost(String author, String body, String permalink, List<String> tags) {
-
-        // TODO
-
+        final Post post = new Post(permalink);
+        post.setAuthor(author);
+        post.setBody(body);
+        post.setTags(tags);
+        mongoTemplate.save(post);
     }
 
     @Test
     public void should_update_body() {
-        Post post = null;
+        Post post = postRepository.findByPermalink("post1");
 
-        // TODO
+        post.setBody("body2");
+        postRepository.save(post);
 
-        Post postFromDb = null;
-
-        // TODO
+        Post postFromDb = postRepository.findByPermalink("post1");
 
         assertThat(postFromDb)
                 .extracting("body").containsExactly("body2");
@@ -64,9 +66,7 @@ public class PostRepositoryTest {
     @Test
     public void should_find_all_documents() {
 
-        List<Post> posts = null;
-
-        // TODO
+        List<Post> posts = postRepository.findAll();
 
         assertThat(posts).hasSize(2);
     }
@@ -75,9 +75,7 @@ public class PostRepositoryTest {
     @Test
     public void should_find_by_author() {
 
-        List<Post> posts = null;
-
-        // TODO
+        List<Post> posts = postRepository.findByAuthor("authorName1");
 
         assertThat(posts)
                 .hasSize(1)
@@ -88,9 +86,7 @@ public class PostRepositoryTest {
     @Test
     public void should_find_by_permalink() {
 
-        Post post = null;
-
-        // TODO
+        Post post = postRepository.findByPermalink("post1");
 
         assertThat(post.getAuthor()).isEqualTo("authorName1");
         assertThat(post.getBody()).isEqualTo("body1");
@@ -99,9 +95,7 @@ public class PostRepositoryTest {
     @Test
     public void should_find_by_tag() {
 
-        List<Post> posts = null;
-
-        // TODO
+        List<Post> posts = postRepository.findByTags("tag1");
 
         assertThat(posts)
                 .hasSize(1)
@@ -112,21 +106,16 @@ public class PostRepositoryTest {
     @Test
     public void should_add_comment() {
 
-        // TODO
+        postRepository.addComment("post1", new Comment("authorName1", "bodyComment"));
 
-        List<Post> posts = null;
-
-        // TODO
+        List<Post> posts = postRepository.findAll() ;
 
         assertThat(posts).hasSize(2);
 
-        Post postFromDb = null;
+        Post postFromDb = postRepository.findByPermalink("post1");
 
-        // TODO
-
-        assertThat(postFromDb.getPermalink()).isEqualTo("post1");
-
-        assertThat(postFromDb.getNumComments()).isEqualTo(1);
+        assertThat(postFromDb)
+                .extracting("numComments").containsExactly(1);
 
         assertThat(postFromDb.getComments())
                 .hasSize(1)

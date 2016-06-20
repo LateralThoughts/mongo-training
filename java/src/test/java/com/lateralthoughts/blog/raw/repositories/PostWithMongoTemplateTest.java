@@ -1,5 +1,6 @@
 package com.lateralthoughts.blog.raw.repositories;
 
+import com.github.fakemongo.Fongo;
 import com.lateralthoughts.blog.model.Post;
 import com.lateralthoughts.blog.springdata.repositories.MongoTestConfiguration;
 import org.junit.Before;
@@ -8,9 +9,12 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -41,21 +45,21 @@ public class PostWithMongoTemplateTest {
     }
 
     private void initMongo() {
-        // TODO
+        mongoTemplate = new MongoTemplate(new Fongo("fakedb").getMongo(), "fakedb");
+        mongoTemplate.dropCollection(Post.class);
     }
 
     private void insertOnePost(String author, String body) {
-
-        // TODO
-
+        final Post post = new Post();
+        post.setAuthor(author);
+        post.setBody(body);
+        mongoTemplate.save(post);
     }
 
     @Test
     public void should_find_all_documents() {
 
-        List<Post> posts = null;
-
-        // TODO
+        List<Post> posts = mongoTemplate.findAll(Post.class);
 
         assertThat(posts).hasSize(2);
     }
@@ -64,9 +68,7 @@ public class PostWithMongoTemplateTest {
     @Test
     public void should_find_by_author() {
 
-        List<Post> posts = null;
-
-        // TODO
+        List<Post> posts = mongoTemplate.find(new Query(Criteria.where("author").is("authorName1")), Post.class);
 
         assertThat(posts)
                 .hasSize(1)

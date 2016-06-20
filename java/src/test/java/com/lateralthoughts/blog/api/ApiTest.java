@@ -42,15 +42,13 @@ public class ApiTest {
     @Before
     public void setup() {
         RestAssured.port = serverPort;
-
-        // TODO remove all records from posts
+        postRepository.deleteAll();
     }
 
     @Test
     public void should_add_post() {
 
-        Post post = new Post();
-        post.setPermalink("permalink");
+        Post post = new Post("permalink");
         post.setAuthor("author");
         post.setBody("body");
         post.setTags(Arrays.asList("tag1", "tag2"));
@@ -62,7 +60,7 @@ public class ApiTest {
                 .when().post("/api/post");
 
 
-        Post postFromDb = null; // TODO reload post from database
+        Post postFromDb = postRepository.findByPermalink("permalink");
 
         assertThat(postFromDb).isNotNull();
         assertThat(postFromDb.getAuthor()).isEqualTo("author");
