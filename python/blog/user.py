@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import cgi
 import re
 import hmac
@@ -63,9 +62,7 @@ def validate_login(connection, username, password, user_record):
     users = db.users
 
     try:
-        # TODO mettre la bonne requête pour trouver le user par son nom d'utilisateur
-        query = {}
-        user = users.find_one(query)
+        user = users.find_one({'_id':username})
     except:
         print "Unable to query database for user"
 

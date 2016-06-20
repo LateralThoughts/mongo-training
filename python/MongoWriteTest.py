@@ -10,134 +10,126 @@ class MongoWriteTest(unittest.TestCase):
     #
     # Initialisation des membres privés à compléter
     def setUp(self):
-        self.mongoclient = None
-        self.db = None
-        self.cds = None
+        self.mongoclient = MongoClient()
+        self.db = self.mongoclient.mediatheque
+        self.cds = self.db.cds
 
     def tearDown(self): 
-        # A completer
+        self.cds.remove()
         self.mongoclient.close()
 
     
-    """
-    Ce test d'exemple permet de vérifier que nous avons bien 0 CDs en base de données
-    La collection est vide, c'est normal car nous allons la remplir dans les tests suivants
-    """
-    @unittest.skip('Remove to play this test')
+    #  Ce test d'exemple permet de vérifier que nous avons bien 0 CDs en base de données
     def testThatDatabaseHas0Cds(self):
         self.assertEqual(self.cds.find().count(), 0)        
 
-    """
-    Ce test permet de vérifier qu'une insertion est prise en compte
-    """
-    @unittest.skip('Remove to play this test')
+    #  Ce test permet de vérifier qu'une insertion est prise en compte
     def testInsertWorks(self):
         cd = {"name" : "cd1"}
 
-        # TODO
+        self.cds.insert(cd)
 
         self.assertEqual(self.cds.find().count(), 1)                
 
-    """
-    Ce test permet de vérifier qu'une insertion par batch est prise en compte
-    """
-    @unittest.skip('Remove to play this test')
+    #  Ce test permet de vérifier qu'une insertion par batch est prise en compte
     def testBatchInsert(self):
         cd1 = {"name" : "cd1"}
         cd2 = {"name" : "cd2"}
 
-        # TODO
+        bulk = self.cds.initialize_ordered_bulk_op()
+
+        bulk.insert(cd1)
+        bulk.insert(cd2)
+
+        bulk.execute()
 
         self.assertEqual(self.cds.find().count(), 2)   
 
-    """
-    Ce test permet de vérifier que nous pouvons mettre à jour le nom du CD
-    """
-    @unittest.skip('Remove to play this test')
+    #  Ce test permet de vérifier que nous pouvons mettre à jour le nom du CD
     def testUpdateName(self):
 
         self.testInsertWorks()
 
-        # TODO
+        self.cds.update({"name" : "cd1"}, {"$set" : {"name" : "new name"}})
 
         self.assertEqual(self.cds.find({"name" : "cd1"}).count(), 0)
         self.assertEqual(self.cds.find({"name" : "new name"}).count(), 1)
 
-    """
-    Ce test permet de vérifier que nous pouvons ajouter un artiste 
-    sur le CD et incrémenter un compteur nbArtiste par la même occasion
-    """
-    @unittest.skip('Remove to play this test')
+    #  Ce test permet de vérifier que nous pouvons ajouter un artiste sur le CD et incrémenter un compter nbArtiste par la même occasion
     def testUpdateAndIncr(self):
 
         self.testInsertWorks()
 
-        # TODO
+        self.cds.update({"name" : "cd1"}, 
+                        {
+                            "$push" : 
+                            {
+                                "artists" : {"name" : "Kurt Cobain"}
+                            }, 
+                            "$inc": {"nbArtists" : 1}
+                        })
 
         self.assertEqual(self.cds.find({"name" : "cd1", "artists.name" : "Kurt Cobain", "nbArtists" : 1}).count(), 1)
 
 
-    """
-    Ce test permet de vérifier que nous pouvons mettre a jour plusieurs CD 
-    d'un coup en ajoutant une note par défaut de 0 (rating)
-    """
-    @unittest.skip('Remove to play this test')
+     #  Ce test permet de vérifier que nous pouvons mettre a jour plusieurs CD d'un coup en ajoutant une note par défaut de 0 (rating)
     def testUpdateMulti(self):
 
         self.testBatchInsert()
 
-        # TODO
+        self.cds.update({}, {"$set" : {"rating" : 0}}, multi=True)
 
         self.assertEqual(self.cds.find({"rating" : 0}).count(), 2)
 
-    """
-    Ce test permet de vérifier l'ajout de tag. Un tag ne peut être en double
-    """
-    @unittest.skip('Remove to play this test')
+     #  Ce test permet de vérifier l'ajout de tag. Un tag ne peut être en double
     def testAddTag(self):
 
         self.testInsertWorks()
 
-        tagsToAdd = ['grunge', 'funk', 'soul', 'grunge']
-
-        # TODO
+        self.cds.update({}, {
+                                "$addToSet" : 
+                                {   
+                                    "tags" : 
+                                    {
+                                        "$each" : ['grunge', 'funk', 'soul', 'grunge']
+                                    }
+                                }
+                            })
 
         cd = self.cds.find_one()
         self.assertEqual(len(cd['tags']), 3)
 
-    """
-    Ce test permet de vérifier la suppression de tag.
-    """
-    @unittest.skip('Remove to play this test')
+     #  Ce test permet de vérifier la suppression de tag.
     def testRemoveTag(self):
 
         self.testAddTag()
 
-        tagsToRemove = ['grunge', 'funk']
-
-        # TODO
+        self.cds.update({}, {"$pullAll" : {"tags" : ['grunge', 'funk']}})
 
         cd = self.cds.find_one()
         self.assertEqual(len(cd['tags']), 1)
 
 
-    """
-    Dans ce test, nous allons mettre à jour un enregistrement pour lui insérer 4 nouvelles notes
-    Mais sur ces 4 notes, nous n'allons en conserver que 3, les 3 plus récentes
-    """
-    @unittest.skip('Remove to play this test')
+     #  Ce test permet de vérifier la suppression de tag.
     def testAddSortedRatingAndLimitBy3(self):
 
         self.testInsertWorks()
 
-        ratings = [
+        self.cds.update({}, {"$push" : 
+            {
+                "ratings" : 
+                {
+                    "$each" :
+                    [
                         {"rating" : 1, "date" : datetime(2010, 01, 15, 00, 00)},
                         {"rating" : 4, "date" : datetime(2011, 01, 15, 00, 00)},
                         {"rating" : 2, "date" : datetime(2009, 01, 15, 00, 00)},
                         {"rating" : 5, "date" : datetime(2013, 01, 15, 00, 00)}
-                    ]
-
-        # TODO
+                    ],
+                    "$sort" : {"date" : 1}, 
+                    "$slice" : -3
+                }
+            }})
 
 
         cd = self.cds.find_one()

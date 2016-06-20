@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import bottle
 
 import pymongo
@@ -10,6 +9,7 @@ import random
 import hmac
 import user
 import sys
+from bottle import route, request, response, template
 
 connection_string = "mongodb://localhost"
 
@@ -38,8 +38,7 @@ def insert_entry(title, post, tags_array, author):
 
     try:
 
-        # TODO 
-
+        posts.insert(post)
         print "Inserting the post"
 
     except:
@@ -55,11 +54,11 @@ def blog_index():
     db = connection.blog
     posts = db.posts
 
+    page = int(request.query.page or '0')
+
     username = login_check()  # see if user is logged in
 
-
-    # TODO remplacer par un find pour trouver les posts dans l'ordre de leur date de publication (limité a 10)
-    cursor = []
+    cursor = posts.find().sort('date', direction=-1).skip(page*10).limit(10)
     l=[]
     
     for post in cursor:
@@ -76,7 +75,7 @@ def blog_index():
                   'comments':post['comments']})
 
 
-    return bottle.template('blog_template', dict(myposts=l,username=username))
+    return bottle.template('blog_template', dict(myposts=l,username=username, page=page))
 
 @bottle.route('/tag/<tag>')
 def posts_by_tag(tag="notfound"):
@@ -84,12 +83,12 @@ def posts_by_tag(tag="notfound"):
     db = connection.blog
     posts = db.posts
 
+    page = int(request.query.page or '0')
+
     username = login_check()  # see if user is logged in
 
     tag = cgi.escape(tag)
-
-    # TODO remplacer par un find pour trouver les posts pour un tag donné dans l'ordre de leur date de publication (limité a 10)
-    cursor = []
+    cursor = posts.find({'tags':tag}).sort('date', direction=-1).skip(page*10).limit(10)
     l=[]
     
     for post in cursor:
@@ -105,7 +104,7 @@ def posts_by_tag(tag="notfound"):
                   'author':post['author'],
                   'comments':post['comments']})
 
-    return bottle.template('blog_template', dict(myposts=l,username=username))
+    return bottle.template('blog_template', dict(myposts=l,username=username, page=page))
 
 
 # gets called both for regular requests and json requests
@@ -122,19 +121,18 @@ def show_post(permalink="notfound"):
     path_re = re.compile(r"^([^\.]+).json$")
     
     print "about to query on permalink = ", permalink
-    # TODO mettre la bonne requête pour trouver un post par son identifiant (permalink)
-    query = {}
-    post = posts.find_one(query)
+    post = posts.find_one({'permalink':permalink})
 
     if post == None:
         bottle.redirect("/post_not_found")
     
     print "date of entry is ", post['date']
 
-    # fix up likes values. set to zero if data is not present
-    for comment in post['comments']:
-        if ('num_likes' not in comment):
-            comment['num_likes'] = 0
+    # XXX Work here. Final exam Problem 4
+    # note that if you keep the values in exactly the same way the entry_template.tpl expects
+    # as hinted by the code right below here that makes sure that code does not barf, 
+    # then you probably don't need to add any code here at all.
+
 
     # fix up date
     post['date'] = post['date'].strftime("%A, %B %d %Y at %I:%M%p")
@@ -165,9 +163,7 @@ def post_newcomment():
     username = login_check()  # see if user is logged in
     permalink = cgi.escape(permalink)
 
-    # TODO mettre la bonne requête pour trouver un post par son identifiant (permalink)
-    query = {}
-    post = posts.find_one(query)
+    post = posts.find_one({'permalink':permalink})
     # if post not found, redirct to post not found error
     if post == None:
         bottle.redirect("/post_not_found")
@@ -240,7 +236,7 @@ def post_comment_like():
 
     # it all looks good. increment the ordinal (no error checking, but whatever)
     try:
-        # TODO
+        # XXX Final exam problem 4. Work here.
 
         print "Incrementing the like counter"
 
@@ -471,6 +467,6 @@ def present_welcome():
 
 
 bottle.debug(True)
-bottle.run(host='localhost', port=8082)
+bottle.run(host='localhost', port=8082, server='cherrypy')
 
 

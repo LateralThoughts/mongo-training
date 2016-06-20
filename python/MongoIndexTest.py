@@ -17,13 +17,7 @@ class MongoIndexTest(unittest.TestCase):
         self.mongoclient.close()
 
 
-    """
-    Il ne s'agit pas d'un test unitaire
-
-    Chaque requête utilise un critère de filtre et parcoure la liste des résultats.
-    Vous devez lancer ce test de la façon habituelle et faire en sorte de diminuer le temps d'execution total
-    """
-    @unittest.skip('Remove to play this test')
+    #  Ce test d'exemple permet de vérifier que nous avons bien 280 notes en base de données
     def testThatIndexesAreOk(self):
         
         messages = self.mongoclient.enron.messages;
