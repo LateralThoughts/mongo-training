@@ -1,0 +1,15 @@
+~*
+.~*
+
+*.log
+*.aux
+*.nav
+*.out
+*.pdf
+*.toc
+*.snm
+*.vrb
+.idea
+*.pptx
+*.iml
+target
