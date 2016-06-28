@@ -14,7 +14,7 @@ var tests = {
         var query = {op : "query"}
         var sort = {millis : -1}
         var result = db.sysprofile.find(query).sort(sort).limit(1)
-        assert(result.count(), 1);
+        assert.eq(result.count(), 317);
         var stat = result.next();
         assert.eq(stat["millis"], 15820);
         assert.eq(stat["op"], "query");
@@ -31,7 +31,7 @@ var tests = {
         var query = {op : "command"}
         var sort = {millis : -1}
         var result = db.sysprofile.find(query).sort(sort).limit(1)
-        assert(result.count(), 1);
+        assert.eq(result.count(), 4);
         var stat = result.next();
         assert.eq(stat["millis"], 47);
         assert.eq(stat["op"], "command");
@@ -40,7 +40,7 @@ var tests = {
 
     testFindAllCollectionsInvolved : function() {
         var result = db.sysprofile.distinct("ns")
-        assert(result.length, 7);
+        assert.eq(result.length, 7);
         assert.eq(result.indexOf("school2.students") != -1, true);
     },
 

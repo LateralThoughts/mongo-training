@@ -10,8 +10,6 @@ function teardown() {
 
 var tests = {
 
-
-
     testThatDatabaseHas0Cds : function () {
         assert.eq(db.cds.find().count(), 0)        
     }
@@ -30,10 +28,7 @@ var tests = {
         cd1 = {"name" : "cd1"}
         cd2 = {"name" : "cd2"}
 
-        var bulk = db.cds.initializeUnorderedBulkOp();
-		bulk.insert( cd1 );
-		bulk.insert( cd2 );
-		bulk.execute( );
+		db.cds.insertMany( [cd1, cd2] );
 
         assert.eq(db.cds.find().count(), 2)   
     }
@@ -62,7 +57,7 @@ var tests = {
                                 "artists" : {"name" : "Kurt Cobain"}
                             }, 
                             "$inc": {"nbArtists" : 1}
-                        })
+                        });
 
         assert.eq(db.cds.find({"name" : "cd1", "artists.name" : "Kurt Cobain", "nbArtists" : 1}).count(), 1)
     }
@@ -94,9 +89,9 @@ var tests = {
                                         "$each" : tagsToAdd
                                     }
                                 }
-                            })
+                            });
 
-        var cd = db.cds.findOne()
+        var cd = db.cds.findOne();
         assert.eq(cd['tags'].length,  3);
     }
     ,
@@ -106,11 +101,11 @@ var tests = {
         
         tests.testAddTag();
 
-        var tagsToRemove = ['grunge', 'funk']
+        var tagsToRemove = ['grunge', 'funk'];
 
         db.cds.update({}, {"$pullAll" : {"tags" : tagsToRemove}})
 
-        var cd = db.cds.findOne()
+        var cd = db.cds.findOne();
         assert.eq(cd['tags'].length,  1);
     }
     ,
@@ -125,7 +120,7 @@ var tests = {
                         {"rating" : 4, "date" : new Date(2011, 01, 15, 00, 00)},
                         {"rating" : 2, "date" : new Date(2009, 01, 15, 00, 00)},
                         {"rating" : 5, "date" : new Date(2013, 01, 15, 00, 00)}
-                    ]
+                    ];
 
         db.cds.update({}, {"$push" : 
             {
@@ -136,13 +131,13 @@ var tests = {
                     "$sort" : {"date" : 1}, 
                     "$slice" : -3
                 }
-            }})
+            }});
 
 
-        var cd = db.cds.findOne()
-        assert.eq(Object.keys(cd['ratings']).length, 3)   
-        assert.eq(cd['ratings'][2]['rating'], 5)  
-        assert.eq(cd['ratings'][0]['rating'], 1)       
+        var cd = db.cds.findOne();
+        assert.eq(Object.keys(cd['ratings']).length, 3)   ;
+        assert.eq(cd['ratings'][2]['rating'], 5)  ;
+        assert.eq(cd['ratings'][0]['rating'], 1);
     }
 }
 

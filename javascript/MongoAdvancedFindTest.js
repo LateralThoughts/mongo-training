@@ -12,11 +12,10 @@ var tests = [
     }
     ,
 
-    function testNumberOfGradesWithExam() {
-        query={"scores.type" : 'exam'}
-        assert.eq(db.grades.find(query).count(), 280)
-    }
-    ,
+    function testNumberOfGradesWithScoreLowerThan20() {
+        query={"scores.score" : {$lt : 20}}
+        assert.eq(db.grades.find(query).count(), 182)
+    },
 
     function testNumberOfGradesWithExamGreaterThan60() {
         query={
