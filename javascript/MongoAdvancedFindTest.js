@@ -37,7 +37,7 @@ var tests = [
         query={}
         projection = {"scores" : {'$slice' : 1}}
         grade = db.grades.findOne(query, projection)
-        assert.contains( 'scores' , grade)
+        assert( grade.hasOwnProperty('scores'))
         assert.eq(Object.keys(grade['scores']).length, 1)
     }
    
