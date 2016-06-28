@@ -11,7 +11,7 @@ var tests = [
 
     function testProjectionOnTitle() {
         var movie = db.movies.findOne({}, {"title": 1})
-        assert.contains( 'title', movie);
+        assert( movie.hasOwnProperty('title'));
         assert.eq(Object.keys(movie).length, 2);
     }
     ,
@@ -43,10 +43,13 @@ var tests = [
         assert.eq(db.movies.find({"filming_locations" : {"$regex" : 'new york', '$options': 'i'}}).count(), 21)
     }
     
-]
+];
+
+print ("####################");
 
 for (var i=0 ; i < tests.length ; i++) {
 	tests[i]();
 }
 
+print ("END");
 
