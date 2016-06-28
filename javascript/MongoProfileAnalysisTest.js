@@ -16,7 +16,7 @@ var tests = {
         var query = {};
         var sort = {};
         var result = [];
-        assert(result.count(), 1);
+        assert.eq(result.count(), 317);
         var stat = result.next();
         assert.eq(stat["millis"], 15820);
         assert.eq(stat["op"], "query");
@@ -39,7 +39,7 @@ var tests = {
         var query = {};
         var sort = {};
         var result = [];
-        assert(result.count(), 1);
+        assert.eq(result.count(), 4);
         var stat = result.next();
         assert.eq(stat["millis"], 47);
         assert.eq(stat["op"], "command");
@@ -51,11 +51,10 @@ var tests = {
     */
     testFindAllCollectionsInvolved : function() {
         var result = []; // replace by the full command
-        assert(result.length, 7);
+        assert.eq(result.length, 7);
         assert.eq(result.indexOf("school2.students") != -1, true);
     }
-
-}
+};
 
 for (var test in tests) {
     print ("####################");

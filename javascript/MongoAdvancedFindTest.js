@@ -20,11 +20,11 @@ var tests = [
     ,
 
     /** 
-    This test check that all grades has an exam
+    This test check that there is 182 grades containing a score lower than 20
     */
-    function testNumberOfGradesWithExam() {
+    function testNumberOfGradesWithScoreLowerThan20() {
         query={}
-        assert.eq(db.grades.find(query).count(), 280)
+        assert.eq(db.grades.find(query).count(), 182)
     }
     ,
 
@@ -45,7 +45,7 @@ var tests = [
         query={}
         projection = {}
         grade = db.grades.findOne(query, projection)
-        assert.contains( 'scores' , grade)
+        assert( grade.hasOwnProperty('scores'))
         assert.eq(Object.keys(grade['scores']).length, 1)
     }
    

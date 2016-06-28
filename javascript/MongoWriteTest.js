@@ -100,7 +100,7 @@ var tests = {
         // TODO
 
         var cd = db.cds.findOne()
-        assert.eq(Object.keys(cd['tags']), 3)
+        assert.eq(Object.keys(cd['tags'].length), 3)
     }
     ,
     /**
@@ -116,7 +116,7 @@ var tests = {
         // TODO
 
         var cd = db.cds.findOne()
-        assert.eq(Object.keys(cd['tags']), 1)
+        assert.eq(Object.keys(cd['tags'].length), 1)
     }
     ,
 
@@ -139,7 +139,7 @@ var tests = {
         // TODO
 
 
-        cd = db.cds.find_one()
+        cd = db.cds.findOne()
         assert.eq(Object.keys(cd['ratings']).length, 3)   
         assert.eq(cd['ratings'][2]['rating'], 5)  
         assert.eq(cd['ratings'][0]['rating'], 1)       
