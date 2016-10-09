@@ -1,7 +1,5 @@
 <?php
-require_once ('PHPUnit/Framework/Assert.php');
-require_once ('PHPUnit/Framework/TestCase.php');
-
+require 'vendor/autoload.php';
 
 /**
  * Class MongoFindTest
@@ -17,13 +15,12 @@ class MongoFindTest extends PHPUnit_Framework_TestCase {
      * Initialisation des membres privés à compléter
      */
     public function setUp(){
-      $this->mongoclient = null; //TODO
-      $this->db = null; //TODO sélectionner la base de données mediatheque
-      $this->movies = null; //TODO sélectionner la collection movies
+        $this->mongoclient = new MongoDB\Client();
+        $this->db = $this->mongoclient->selectDatabase("mediatheque");
+        $this->movies = $this->db->selectCollection("movies");
     }
 
     public function tearDown(){
-        $this->mongoclient->close();
     }
 
     /**
@@ -32,7 +29,7 @@ class MongoFindTest extends PHPUnit_Framework_TestCase {
     public function testThatDatabaseHas350Movies(){
 
         // TODO compter le nombre de films dans la base de données (count)
-        $nbMoviesInDatabase = null;
+        $nbMoviesInDatabase = $this->movies->count();
 
         $this->assertEquals($nbMoviesInDatabase, 350);
     }
@@ -42,7 +39,7 @@ class MongoFindTest extends PHPUnit_Framework_TestCase {
      */
     public function testThatMovieWithGenreCrimeAre69(){
         // TODO compter le nombre de films dont l'un des genres est 'Crime'
-        $nbCrimeMoviesInDatabase = null;
+        $nbCrimeMoviesInDatabase = $this->movies->count();
 
         $this->assertEquals($nbCrimeMoviesInDatabase, 69);
     }
@@ -53,22 +50,21 @@ class MongoFindTest extends PHPUnit_Framework_TestCase {
     public function testProjectionOnTitle(){
 
         // TODO faire une recherche d'un élément avec une projection sur le titre (et uniquement le titre)
-        $query = null;
-        $movie = null;
+        $movie = $this->movies->findOne([], []);
 
         $this->assertArrayHasKey('title', $movie);
-        $this->assertTrue(count(array_keys($movie)) == 1);
+        $this->assertArrayNotHasKey('_id', $movie);
     }
 
     /**
-     * Ce test doit vérifier que nous avons 118 films avec une note comprise entre 7 et 8
+     * Ce test doit vérifier que nous avons 224 films avec une note comprise entre 8 et 9
      */
-    public function testRatingBetween7And8(){
+    public function testRatingBetween8And9(){
 
-        // TODO faire un comptage des films dont la note est comprise entre 7 et 8 (inclus)
-        $nbMoviesInRange78 = null;
+        // TODO faire un comptage des films dont la note est comprise entre 8 et 9 (exclus)
+        $nbMoviesInRange89 = $this->movies->count();
 
-        $this->assertEquals($nbMoviesInRange78, 118);
+        $this->assertEquals($nbMoviesInRange89, 224);
     }
 
     /**
@@ -77,7 +73,7 @@ class MongoFindTest extends PHPUnit_Framework_TestCase {
     public function testAllMovieComedyAndRomance(){
 
         // TODO compter le nombre de films de genre Comedy et Romance
-        $nbComedyAndRomanceMovies = null;
+        $nbComedyAndRomanceMovies = $this->movies->count();
 
         $this->assertEquals($nbComedyAndRomanceMovies, 24);
     }
@@ -88,7 +84,7 @@ class MongoFindTest extends PHPUnit_Framework_TestCase {
     public function testAllMovieNotComedyAndRomance(){
 
         // TODO
-        $nbMoviesNeitherRomanceNeitherComedy = null;
+        $nbMoviesNeitherRomanceNeitherComedy = $this->movies->count();
 
         $this->assertEquals($nbMoviesNeitherRomanceNeitherComedy, 243);
     }
@@ -99,7 +95,7 @@ class MongoFindTest extends PHPUnit_Framework_TestCase {
     public function testAllMovieScienceFictionOrWithMorganFreeman(){
 
         // TODO
-        $nbSciFiMoviesOrWithMorganFreeman = null;
+        $nbSciFiMoviesOrWithMorganFreeman = $this->movies->count();
 
         $this->assertEquals($nbSciFiMoviesOrWithMorganFreeman, 53);
     }
@@ -110,7 +106,7 @@ class MongoFindTest extends PHPUnit_Framework_TestCase {
     public function testAllMoviesWithFieldAlsoKnownAs(){
 
         // TODO
-        $nbMoviesWithAnAlias = null;
+        $nbMoviesWithAnAlias = $this->movies->count();
 
         $this->assertEquals($nbMoviesWithAnAlias, 335);
     }
@@ -121,7 +117,7 @@ class MongoFindTest extends PHPUnit_Framework_TestCase {
     public function testMoviesLocationMatchingNewYork(){
 
         // TODO
-        $nbMoviesFilmedInNewYork = null;
+        $nbMoviesFilmedInNewYork = $this->movies->count();
 
         $this->assertEquals($nbMoviesFilmedInNewYork, 21);
     }

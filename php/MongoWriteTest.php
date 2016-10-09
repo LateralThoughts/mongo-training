@@ -1,7 +1,5 @@
 <?php
-require_once ('PHPUnit/Framework/Assert.php');
-require_once ('PHPUnit/Framework/TestCase.php');
-
+require 'vendor/autoload.php';
 
 /**
  * Class MongoWriteTest
@@ -18,15 +16,15 @@ class MongoWriteTest extends PHPUnit_Framework_TestCase {
         // Nécessaire pour les manipulations de dates que vous allez effectuer plus bas
         date_default_timezone_set('UTC');
 
-        $this->mongoclient = new MongoClient();
-        $this->db = $this->mongoclient->selectDB("mediatheque");
+        $this->mongoclient = new MongoDB\Client();
+        $this->db = $this->mongoclient->selectDatabase("mediatheque");
         $this->cds = $this->db->selectCollection("cds");
+
+        // Ce test repart d'une collection vide à chaque lancement
+        // TODO
     }
 
     public function tearDown(){
-        // Ce test repart d'une collection vide à chaque lancement
-        $this->cds->remove();
-        $this->mongoclient->close();
     }
 
     /**
@@ -73,7 +71,7 @@ class MongoWriteTest extends PHPUnit_Framework_TestCase {
 
 
     /**
-     *  Ce test permet de vérifier que nous pouvons mettre à jour le nom du CD
+     *  Ce test permet de vérifier que nous pouvons mettre à jour le nom du CD qui a le nom "cd1"
      */
     public function testUpdateName(){
 
@@ -137,6 +135,7 @@ class MongoWriteTest extends PHPUnit_Framework_TestCase {
     public function testRemoveTag(){
 
         $this->testAddTag();
+        $tagsToRemove = ['grunge', 'funk'];
 
         // TODO faire la mise à jour en supprimant deux tags
 
@@ -145,32 +144,6 @@ class MongoWriteTest extends PHPUnit_Framework_TestCase {
         $cd = $this->cds->findOne();
         $this->assertEquals(count($cd['tags']), 1);
     }
-
-    /**
-     *  Ce test permet de vérifier l'ajout de rating en les triant par date et en supprimant le plus ancien
-     */
-    public function testAddSortedRatingAndLimitBy3(){
-
-        $this->testInsertWorks();
-
-        $ratings = array (
-            array('rating'=>1, 'date'=> new MongoDate(strtotime("2010-01-15 00:00:00"))),
-            array('rating'=>4, 'date'=> new MongoDate(strtotime("2011-01-15 00:00:00"))),
-            array('rating'=>2, 'date'=> new MongoDate(strtotime("2009-01-15 00:00:00"))),
-            array('rating'=>5, 'date'=> new MongoDate(strtotime("2013-01-15 00:00:00")))
-        );
-
-
-        // TODO faire la mise à jour :
-        // ajouter les notes ci dessus en les triant par date et en supprimant le plus ancien (par une requête, interdit de le faire en php directement)
-
-        // FIN TODO
-
-        $cd = $this->cds->findOne();
-        $this->assertEquals(count($cd['ratings']), 3);
-        $this->assertEquals($cd['ratings'][2]['rating'], 5);
-        $this->assertEquals($cd['ratings'][0]['rating'], 1);
-    }
-
+    
 }
 ?>
