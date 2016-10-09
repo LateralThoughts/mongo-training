@@ -1,0 +1,23 @@
+Pour lancer les tests :
+
+
+# Prérequis : 
+* Avoir PHP disponible en ligne de commande (Ajouter le chemin vers php.exe dans son PATH)
+* Avoir l'extension mongo installé php_mongodb.dll
+
+# Etapes :
+
+* Avoir composer installé dans son environnement
+** php -r "eval('?>'.file_get_contents('http://getcomposer.org/installer'));"
+** php composer.phar self-update
+
+* Utiliser composer pour télécharger les dépendances 
+** php composer.phar update
+
+* Avoir phpunit disponible en ligne de commande
+** Télécharger https://phar.phpunit.de/phpunit.phar et placer le fichier phpunit.phar à la racine de ce répertoire
+** echo @php "%~dp0phpunit.phar" %* > phpunit.cmd
+** phpunit --version
+
+* Lancer un test : 
+** phpunit MongoFindTest

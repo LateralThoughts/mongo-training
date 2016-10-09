@@ -1,6 +1,6 @@
 <?php
-require_once ('PHPUnit/Framework/Assert.php');
-require_once ('PHPUnit/Framework/TestCase.php');
+
+require 'vendor/autoload.php';
 
 /**
  * Class MongoAggregationTest
@@ -16,13 +16,12 @@ class MongoAggregationTest extends PHPUnit_Framework_TestCase {
      * Initialisation des membres privés à compléter
      */
     public function setUp(){
-      $this->mongoclient = new MongoClient();
-      $this->db = $this->mongoclient->selectDB("zips");
-      $this->zips = $this->db->selectCollection("zips");
+      $this->mongoclient = new MongoDB\Client();
+      $this->db = $this->mongoclient->selectDatabase('zips');
+      $this->zips = $this->db->selectCollection('zips');
     }
 
     public function tearDown(){
-        $this->mongoclient->close();
     }
 
     /**
@@ -38,9 +37,18 @@ class MongoAggregationTest extends PHPUnit_Framework_TestCase {
     public function testFindLargestZipCodeAmongstCity(){
 
         // TODO définir le pipeline
+        $pipeline = [
+            [
+                '$sort' => [
+                    'pop' => -1
+                ]
+            ], [
+                '$limit' => 1
+            ]
+        ];
 
-        $result = $this->zips->aggregate();
-        $this->assertEquals('CHICAGO', $result['result'][0]['city']);
+        $result = $this->zips->aggregate($pipeline);
+        $this->assertEquals('CHICAGO', $result->toArray()[0]['city']);
     }
 
     /**
@@ -50,9 +58,27 @@ class MongoAggregationTest extends PHPUnit_Framework_TestCase {
     public function testFindLargestCityWithNormalizedName(){
 
         // TODO définir le pipeline
+        $pipeline = [
+            [
+                '$sort' => [
+                    'pop' => -1
+                ]
+            ], [
+                '$limit' => 1
+            ], [
+                '$project' => [
+                   '_id' => [ 
+                        '$concat' => [
+                            ['$toLower' => '$city'], ' ', '$state', ' - ', '$_id'
+                        ] 
+                   ], 'pop' => 1
 
-        $result = $this->zips->aggregate();
-        $this->assertEquals('chicago IL - 60623', $result['result'][0]['_id']);
+                ]
+            ]
+        ];
+
+        $result = $this->zips->aggregate($pipeline);
+        $this->assertEquals('chicago IL - 60623', $result->toArray()[0]['_id']);
     }
 
     /**
@@ -61,9 +87,22 @@ class MongoAggregationTest extends PHPUnit_Framework_TestCase {
     public function testFindLargestZipCodeAmongstCityOfNewYork(){
 
         // TODO définir le pipeline
-
-        $result = $this->zips->aggregate();
-        $this->assertEquals('BROOKLYN', $result['result'][0]['city']);
+        $pipeline = [
+            [
+                '$match' => [
+                    'state' => 'NY'
+                ]
+            ],
+            [
+                '$sort' => [
+                    'pop' => -1
+                ]
+            ], [
+                '$limit' => 1
+            ]
+        ];
+        $result = $this->zips->aggregate($pipeline);
+        $this->assertEquals('BROOKLYN', $result->toArray()[0]['city']);
     }
 
     /**
@@ -71,10 +110,26 @@ class MongoAggregationTest extends PHPUnit_Framework_TestCase {
      */
     public function testStateWithTheLargestNumberOfZipCodes(){
         // TODO définir le pipeline
+        $pipeline = [
+            [
+                '$group' => [
+                    '_id' => '$state',
+                    'number_of_zipcode' => ['$sum' => 1]
+                ]
+            ],
+            [
+                '$sort' => [
+                    'number_of_zipcode' => -1
+                ]
+            ], [
+                '$limit' => 1
+            ]
+        ];
 
-        $result = $this->zips->aggregate();
-        $this->assertEquals('TX', $result['result'][0]['_id']);
-        $this->assertEquals('1676', $result['result'][0]['number_of_zipcode']);
+        $result = $this->zips->aggregate($pipeline)->toArray();
+
+        $this->assertEquals('TX', $result[0]['_id']);
+        $this->assertEquals('1676', $result[0]['number_of_zipcode']);
     }
 
     /**
@@ -82,10 +137,26 @@ class MongoAggregationTest extends PHPUnit_Framework_TestCase {
      */
     public function testSecondStateWithTheLargestNumberOfZipCodes(){
         // TODO définir le pipeline
-
-        $result = $this->zips->aggregate();
-        $this->assertEquals('NY', $result['result'][0]['_id']);
-        $this->assertEquals('1596', $result['result'][0]['number_of_zipcode']);
+        $pipeline = [
+            [
+                '$group' => [
+                    '_id' => '$state',
+                    'number_of_zipcode' => ['$sum' => 1]
+                ]
+            ],
+            [
+                '$sort' => [
+                    'number_of_zipcode' => -1
+                ]
+            ], [
+                '$skip' => 1
+            ], [
+                '$limit' => 1
+            ]
+        ];
+        $result = $this->zips->aggregate($pipeline)->toArray();
+        $this->assertEquals('NY', $result[0]['_id']);
+        $this->assertEquals('1596', $result[0]['number_of_zipcode']);
     }
 
     /**
@@ -93,10 +164,24 @@ class MongoAggregationTest extends PHPUnit_Framework_TestCase {
      */
     public function testStateWithLargestPopulation(){
         // TODO définir le pipeline
-
-        $result = $this->zips->aggregate();
-        $this->assertEquals('CA', $result['result'][0]['_id']);
-        $this->assertEquals('29760021', $result['result'][0]['total_pop']);
+        $pipeline = [
+            [
+                '$group' => [
+                    '_id' => '$state',
+                    'total_pop' => ['$sum' => '$pop']
+                ]
+            ],
+            [
+                '$sort' => [
+                    'total_pop' => -1
+                ]
+            ], [
+                '$limit' => 1
+            ]
+        ];
+        $result = $this->zips->aggregate($pipeline)->toArray();
+        $this->assertEquals('CA', $result[0]['_id']);
+        $this->assertEquals('29760021', $result[0]['total_pop']);
     }
 
     /**
@@ -105,10 +190,16 @@ class MongoAggregationTest extends PHPUnit_Framework_TestCase {
     public function testLargestCityInNewYork(){
 
         // TODO définir le pipeline
+        $match = ['$match' => [ 'state' => 'NY' ]];
+        $groupByCity = ['$group' => ['_id' => ['state' => '$state', 'city' => '$city'], 'pop_by_city' => ['$sum' => '$pop']]];
+        $sort = ['$sort' => ['pop_by_city' => -1]];
+        $findLargest = ['$group' => ['_id' => '$_id.state', 'largest_city' => ['$first' => '$_id.city'], 'largest_pop' => ['$first' => '$pop_by_city']]];
 
-        $result = $this->zips->aggregate();
-        $this->assertEquals('BROOKLYN', $result['result'][0]['largest_city']);
-        $this->assertEquals(2300504, $result['result'][0]['largest_pop']);
+        $pipeline = [$match, $groupByCity, $sort, $findLargest];
+        $result = $this->zips->aggregate($pipeline)->toArray();
+        
+        $this->assertEquals('BROOKLYN', $result[0]['largest_city']);
+        $this->assertEquals(2300504, $result[0]['largest_pop']);
     }
 
 
@@ -118,9 +209,14 @@ class MongoAggregationTest extends PHPUnit_Framework_TestCase {
     public function testAvgPopulationByCityInNewYork(){
 
         // TODO définir le pipeline
+        $match = ['$match' => [ 'state' => 'NY' ]];
+        $groupByCityAndState = ['$group' => ['_id' => ['state' => '$state', 'city' => '$city'], 'pop_by_city' => ['$sum' => '$pop']]];
+        $findAverage = ['$group' => ['_id' => '$_id.state', 'avg_city_pop' => ['$avg' => '$pop_by_city']]];
+        
+        $pipeline = [$match, $groupByCityAndState, $findAverage];
+        $result = $this->zips->aggregate($pipeline)->toArray();
 
-        $result = $this->zips->aggregate();
-        $this->assertEquals(13122, round($result['result'][0]['avg_city_pop']));
+        $this->assertEquals(13122, round($result[0]['avg_city_pop']));
     }
 }
 ?>
